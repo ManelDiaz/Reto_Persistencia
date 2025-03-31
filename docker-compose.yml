@@ -1,0 +1,19 @@
+
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres_turbina 
+    restart: always
+    environment:
+      POSTGRES_USER: usuario
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: turbina_viento
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql 
+
+volumes:
+  pgdata:

@@ -1,9 +1,21 @@
-
-
 services:
+
+  aplicacion:
+    build: ./aplicacion
+    container_name: aplicacion_turbina
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://usuario:password@postgres:5432/turbina_viento
+    volumes:
+      - ./app:/app
+    depends_on:
+      - postgres
+
   postgres:
     image: postgres:15
-    container_name: postgres_turbina 
+    container_name: postgres_turbina
     restart: always
     environment:
       POSTGRES_USER: usuario
@@ -13,7 +25,22 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql 
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  grafana:
+    image: grafana/grafana:11.6.0
+    container_name: grafana_turbina
+    restart: always
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - postgres
 
 volumes:
   pgdata:
+  grafana_data:

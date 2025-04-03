@@ -1,8 +1,8 @@
 services:
 
-  aplicacion:
-    build: ./aplicacion
-    container_name: aplicacion_turbina
+  app:
+    build: ./app
+    container_name: app_turbina
     restart: always
     ports:
       - "8000:8000"

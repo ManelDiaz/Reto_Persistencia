@@ -3,24 +3,25 @@ services:
   app:
     build: ./app
     container_name: app_turbina
-    restart: always
+    restart: on-failure:3
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://usuario:password@postgres:5432/turbina_viento
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/turbina_db
     volumes:
       - ./app:/app
+      - ./db/data:/data
     depends_on:
-      - postgres
+      - db
 
-  postgres:
+  db:
     image: postgres:15
     container_name: postgres_turbina
     restart: always
     environment:
-      POSTGRES_USER: usuario
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: turbina_viento
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: turbina_db
     ports:
       - "5432:5432"
     volumes:
@@ -34,12 +35,15 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
     ports:
       - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - ./grafana/provisioning:/etc/grafana/provisioning
     depends_on:
-      - postgres
+      - db
 
 volumes:
   pgdata:

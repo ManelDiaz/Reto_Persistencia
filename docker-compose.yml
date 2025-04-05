@@ -1,7 +1,7 @@
 services:
 
   app:
-    mem_limitjnm : 512M
+    mem_limit : 512M
     build: ./app
     container_name: app_turbina
     restart: on-failure:3

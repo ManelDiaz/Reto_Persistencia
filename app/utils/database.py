@@ -76,6 +76,7 @@ def conectar_db(max_intentos=5, espera_segundos=3):
 def importar_csv_db(conexion, ruta_csv, batch_size=100):
     """
     Lee un archivo CSV y lo inserta en la base de datos usando transacciones por lotes.
+    Solo inserta los registros cuyos valores están dentro de rangos definidos.
     
     Args:
         conexion: Conexión a la base de datos PostgreSQL
@@ -111,6 +112,14 @@ def importar_csv_db(conexion, ruta_csv, batch_size=100):
             'Wind Direction (°)': 'wind_direction_deg'
         }
         
+        # Definir los rangos válidos para cada columna
+        valid_ranges = {
+            'lv_active_power_kw': (0, 4000),                # Potencia activa entre 0 y 3000 kW
+            'wind_speed_ms': (0, 30),                       # Velocidad del viento entre 0 y 30 m/s
+            'theoretical_power_curve_kwh': (0, 4000),       # Potencia teórica entre 0 y 3000 KWh
+            'wind_direction_deg': (0, 360)                  # Dirección del viento entre 0 y 360 grados
+        }
+        
         # Renombrar columnas para facilitar el procesamiento
         df = df.rename(columns=column_mapping)
         
@@ -118,6 +127,7 @@ def importar_csv_db(conexion, ruta_csv, batch_size=100):
         total_records = len(df)
         valid_records = 0
         invalid_records = 0
+        skipped_records = 0
         
         # Cálculo de timestamps distribuidos en los últimos 5 minutos
         current_time = datetime.now()
@@ -144,6 +154,24 @@ def importar_csv_db(conexion, ruta_csv, batch_size=100):
                 record_counter = 0  # Contador para posición dentro del lote actual
                 for index, row in batch_df.iterrows():
                     try:
+                        # Verificar si todos los valores están dentro de los rangos definidos
+                        valid_row = True
+                        for column, (min_val, max_val) in valid_ranges.items():
+                            try:
+                                value = float(row[column])
+                                if not (min_val <= value <= max_val):
+                                    logger.warning(f"Fila {index}: {column} = {value} fuera del rango [{min_val}, {max_val}]")
+                                    valid_row = False
+                                    break
+                            except (ValueError, TypeError):
+                                logger.warning(f"Fila {index}: {column} = {row[column]} no es un valor numérico válido")
+                                valid_row = False
+                                break
+                        
+                        if not valid_row:
+                            skipped_records += 1
+                            continue
+                        
                         # Calcular índice global como la posición actual en el lote + el inicio del lote
                         global_index = batch_start + record_counter
                         
@@ -174,7 +202,7 @@ def importar_csv_db(conexion, ruta_csv, batch_size=100):
                 
                 # Confirmar la transacción del lote actual
                 conexion.commit()
-                logger.info(f"Lote {batch_start//batch_size + 1}: {valid_records - invalid_records} registros insertados")
+                logger.info(f"Lote {batch_start//batch_size + 1}: {record_counter} registros insertados")
                 
             except Exception as batch_error:
                 # Si hay error en el lote, hacer rollback y registrar
@@ -186,12 +214,14 @@ def importar_csv_db(conexion, ruta_csv, batch_size=100):
                 cursor.close()
         
         logger.info(f"Se importaron {valid_records} registros a la base de datos")
+        logger.info(f"Se omitieron {skipped_records} registros por estar fuera de los rangos válidos")
         
         # Devuelve un diccionario con el resumen
         return {
             "total": total_records,
             "valid": valid_records,
-            "invalid": invalid_records
+            "invalid": invalid_records,
+            "skipped": skipped_records
         }
         
     except Exception as e:
@@ -203,6 +233,7 @@ def importar_csv_db(conexion, ruta_csv, batch_size=100):
             "total": total_records if 'total_records' in locals() else 0,
             "valid": valid_records if 'valid_records' in locals() else 0,
             "invalid": invalid_records if 'invalid_records' in locals() else 0,
+            "skipped": skipped_records if 'skipped_records' in locals() else 0,
             "error": str(e)
         }
 

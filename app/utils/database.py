@@ -119,8 +119,17 @@ def importar_csv_db(conexion, ruta_csv, batch_size=100):
         valid_records = 0
         invalid_records = 0
         
-        # Actualizamos todos los timestamps a la fecha y hora actual
+        # Cálculo de timestamps distribuidos en los últimos 5 minutos
         current_time = datetime.now()
+        start_time = current_time - timedelta(minutes=5)
+        
+        # Calcular el intervalo entre registros para distribuirlos uniformemente
+        if total_records > 1:
+            # Calculamos el intervalo total en segundos y lo dividimos entre el número de registros
+            total_interval_seconds = (current_time - start_time).total_seconds()
+            interval_seconds = total_interval_seconds / (total_records - 1)
+        else:
+            interval_seconds = 0
         
         # Procesar por lotes para manejar mejor las transacciones
         for batch_start in range(0, len(df), batch_size):
@@ -132,10 +141,14 @@ def importar_csv_db(conexion, ruta_csv, batch_size=100):
             
             try:
                 # Insertamos los datos del lote actual
+                record_counter = 0  # Contador para posición dentro del lote actual
                 for index, row in batch_df.iterrows():
                     try:
-                        # Crear un timestamp único para cada fila
-                        unique_timestamp = current_time + timedelta(microseconds=index)
+                        # Calcular índice global como la posición actual en el lote + el inicio del lote
+                        global_index = batch_start + record_counter
+                        
+                        # Calcular timestamp único para este registro
+                        unique_timestamp = start_time + timedelta(seconds=global_index * interval_seconds)
                         
                         # Insertar registro
                         insert_query = """
@@ -153,6 +166,7 @@ def importar_csv_db(conexion, ruta_csv, batch_size=100):
                             )
                         )
                         valid_records += 1
+                        record_counter += 1  # Incrementa el contador para el siguiente registro
                     except Exception as row_error:
                         # Registrar error pero continuar con el siguiente registro
                         invalid_records += 1

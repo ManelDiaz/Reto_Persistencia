@@ -114,9 +114,9 @@ def importar_csv_db(conexion, ruta_csv, batch_size=100):
         
         # Definir los rangos válidos para cada columna
         valid_ranges = {
-            'lv_active_power_kw': (0, 4000),                # Potencia activa entre 0 y 3000 kW
+            'lv_active_power_kw': (0, 4000),                # Potencia activa entre 0 y 4000 kW
             'wind_speed_ms': (0, 30),                       # Velocidad del viento entre 0 y 30 m/s
-            'theoretical_power_curve_kwh': (0, 4000),       # Potencia teórica entre 0 y 3000 KWh
+            'theoretical_power_curve_kwh': (0, 4000),       # Potencia teórica entre 0 y 4000 KWh
             'wind_direction_deg': (0, 360)                  # Dirección del viento entre 0 y 360 grados
         }
         

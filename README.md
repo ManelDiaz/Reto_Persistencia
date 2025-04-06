@@ -19,13 +19,18 @@ Instrucciones de uso:
 - Clonar el repositorio con el comando `git clone`.
 - Levantar los contenedores ejecutando `docker-compose up -d` en la terminal de WSL.
 - Buscando localhost:3000 e iniciando sesion con user: admin psw: admin y buscando en los dashboards es posible ver los datos almacenados en la db.
--  
+- Es posible acceder mediante linea de comandos a la base de datos mediante el siguiente comando en WSL: docker exec -it postgres_turbina psql -U postgres -d turbina_db
+
 
 Posibles vías de mejora:
-- 
+- Añadir alertas en grafana en caso de que lleguen datos anómalos
+- Utilizar Influxdb en vez de Postgres
 
 Problemas encontrados:
-- 
+- Al cargar los datos del csv en grafan se rompían los graficos debido a datos anómalos
+- Al tener datos negativos en el csv, la subida a postgres eran rechazado lo que afectaba al análisis
+- Problemas a la hora de mantener los dashboards de grafana una vez detenido el contendor de grafana.
 
 Alternativas posibles:
-- 
+- Utilizar FastAPI para probar los endpoints más fácilmente
+- Automatizar el despliegue a github con CI/CD utilizando Github Actions para cada push

@@ -1,5 +1,0 @@
-Razones eleccion de PostgreSQL:
-	- Escalabilidad, maneja bien grandes volumenes de datos, suponiendo que cada vez se vana  a generar nuevos, seria la mejor opcion
-	- Gran rendimiento para datos temporales y soporte para consultas con marca de tiempo
-	- pgAdmin, herramienta grafica para administrar la base de datos
-	- 
